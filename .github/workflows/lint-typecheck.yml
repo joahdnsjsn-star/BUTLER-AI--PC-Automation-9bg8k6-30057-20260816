@@ -1,0 +1,49 @@
+name: Lint & Type Check
+
+# Runs ESLint and TypeScript type checking on every push to main
+# and on every pull request targeting main.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - 'package.json'
+      - 'tsconfig.json'
+      - '.eslintrc*'
+      - 'eslint.config.*'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: ESLint + TypeScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
+        run: npx expo lint
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit

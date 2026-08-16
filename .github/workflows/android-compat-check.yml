@@ -1,0 +1,171 @@
+name: Android Compatibility Check
+
+# Validates that the app is Android-compatible and can generate a native
+# Android project (a prerequisite for building APK / AAB) without needing
+# EAS, signing keys, or a full Android SDK.
+#
+# What it checks:
+#   1. expo-doctor  — detects outdated / incompatible packages and bad config
+#   2. expo prebuild --platform android
+#                   — generates the android/ native project from app.json;
+#                     fails fast if any plugin or config is broken
+#   3. Gradle wrapper present — confirms the generated project has the files
+#                     Gradle needs to compile (sanity-check before EAS build)
+#
+# Triggers:
+#   • Every push to main that touches app code, config, or dependencies
+#   • Every PR targeting main
+#   • Manual dispatch (useful to recheck after updating dependencies)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'services/**'
+      - 'contexts/**'
+      - 'hooks/**'
+      - 'utils/**'
+      - 'constants/**'
+      - 'assets/**'
+      - 'package.json'
+      - 'app.json'
+      - 'eas.json'
+      - '**/*.ts'
+      - '**/*.tsx'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: android-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android-compat:
+    name: Android Compatibility Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # ── Step 1: expo-doctor ───────────────────────────────────────────────
+      # Checks for incompatible package versions, missing plugins, bad config,
+      # and other issues that would cause a build to fail on EAS.
+      - name: Run expo-doctor
+        run: |
+          echo "🩺 Running expo-doctor..."
+          # expo-doctor exits non-zero when it finds issues; we capture the
+          # output and display it, then decide whether to fail based on the
+          # category of issue found.
+          npx expo-doctor@latest 2>&1 | tee /tmp/expo-doctor-output.txt || true
+
+          # Fail if doctor reports errors (lines starting with ✖ or ✗ or ERROR)
+          if grep -qE "^(✖|✗|ERROR)" /tmp/expo-doctor-output.txt; then
+            echo ""
+            echo "❌ expo-doctor found critical issues that must be fixed before building."
+            exit 1
+          fi
+
+          echo "✅ expo-doctor passed (warnings above are non-blocking)."
+
+      # ── Step 2: expo prebuild ─────────────────────────────────────────────
+      # Generates the native android/ project from Expo config (app.json +
+      # plugins).  This is exactly what EAS does before running Gradle, so
+      # if this step passes your config is valid for a real build.
+      - name: Run expo prebuild (Android)
+        run: |
+          echo "🔨 Running expo prebuild --platform android --clean..."
+          npx expo prebuild --platform android --clean --non-interactive
+          echo "✅ expo prebuild succeeded — native Android project generated."
+
+      # ── Step 3: Gradle wrapper sanity check ───────────────────────────────
+      # Confirm the generated project has the files Gradle needs to compile.
+      # This catches edge-cases where prebuild succeeds but produces an
+      # incomplete project (e.g. missing gradlew or build.gradle).
+      - name: Verify Gradle wrapper is present
+        run: |
+          echo "🔍 Verifying Gradle wrapper..."
+          MISSING=()
+          [ -f android/gradlew ]           || MISSING+=("android/gradlew")
+          [ -f android/build.gradle ]       || MISSING+=("android/build.gradle")
+          [ -f android/app/build.gradle ]   || MISSING+=("android/app/build.gradle")
+          [ -f android/settings.gradle ]    || MISSING+=("android/settings.gradle")
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "❌ The following required Gradle files are missing after prebuild:"
+            for f in "${MISSING[@]}"; do echo "   • $f"; done
+            exit 1
+          fi
+          echo "✅ All required Gradle files are present."
+
+      # ── Step 4: Validate app.json Android config ──────────────────────────
+      # Quick sanity-check on critical Android fields in app.json.
+      - name: Validate Android config in app.json
+        run: |
+          echo "📋 Validating Android config fields in app.json..."
+          node - <<'EOF'
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          const android = config?.expo?.android;
+          const errors = [];
+
+          if (!android)               errors.push('Missing expo.android block');
+          if (!android?.package)      errors.push('Missing expo.android.package');
+          if (!android?.versionCode)  errors.push('Missing expo.android.versionCode');
+          if (!config?.expo?.version) errors.push('Missing expo.version');
+          if (!config?.expo?.name)    errors.push('Missing expo.name');
+          if (!config?.expo?.slug)    errors.push('Missing expo.slug');
+
+          // Check adaptive icon exists
+          const fgImage = android?.adaptiveIcon?.foregroundImage;
+          if (fgImage) {
+            if (!fs.existsSync(fgImage.replace('./', ''))) {
+              errors.push(`adaptiveIcon foregroundImage not found: ${fgImage}`);
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('❌ app.json Android config errors:');
+            errors.forEach(e => console.error('   •', e));
+            process.exit(1);
+          }
+
+          console.log('✅ app.json Android config is valid.');
+          console.log('   package:     ', android.package);
+          console.log('   versionCode: ', android.versionCode);
+          console.log('   version:     ', config.expo.version);
+          EOF
+
+      - name: Summary
+        if: success()
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════╗"
+          echo "║   ✅  Android Compatibility Check — ALL PASSED       ║"
+          echo "╠══════════════════════════════════════════════════════╣"
+          echo "║  • expo-doctor:       no critical issues             ║"
+          echo "║  • expo prebuild:     native project generated       ║"
+          echo "║  • Gradle wrapper:    all required files present     ║"
+          echo "║  • app.json config:   valid Android configuration    ║"
+          echo "╠══════════════════════════════════════════════════════╣"
+          echo "║  Ready to trigger an EAS build (APK/AAB).            ║"
+          echo "║  Use the 'EAS Build — Preview' workflow for APK or   ║"
+          echo "║  trigger with profile=production for AAB.            ║"
+          echo "╚══════════════════════════════════════════════════════╝"

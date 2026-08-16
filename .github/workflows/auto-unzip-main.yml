@@ -1,0 +1,111 @@
+name: Auto-Unzip on Main
+
+# Triggers whenever a .zip file is added or updated on the main branch.
+# Extracts every zip found in the repo and overwrites any existing files
+# that share the same path, then commits the result back to main.
+# The bot's own commit uses [skip ci] to prevent an infinite loop.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.zip"
+
+concurrency:
+  group: auto-unzip-main
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  auto-unzip:
+    name: Extract zip and replace matching files
+    runs-on: ubuntu-latest
+    # Skip commits made by the bot itself (extra guard against loops)
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find zip files in the repository
+        id: find_zips
+        run: |
+          ZIPS=$(find . -not -path './.git/*' -name '*.zip' | sort)
+          if [ -z "$ZIPS" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No zip files found — nothing to extract." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "$ZIPS" > /tmp/zip_list.txt
+            echo "### Zip files detected" >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r z; do
+              echo "- \`$z\`" >> "$GITHUB_STEP_SUMMARY"
+            done < /tmp/zip_list.txt
+          fi
+
+      - name: Extract zips and overwrite matching files
+        if: steps.find_zips.outputs.found == 'true'
+        id: extract
+        run: |
+          CHANGED=0
+
+          while IFS= read -r ZIP_PATH; do
+            echo "::group::Extracting $ZIP_PATH"
+
+            rm -rf /tmp/zip_extract
+            mkdir -p /tmp/zip_extract
+
+            unzip -q -o "$ZIP_PATH" -d /tmp/zip_extract
+
+            # If the zip wraps everything in a single top-level folder, step into it
+            # (common for GitHub-downloaded archives like repo-main.zip)
+            ITEM_COUNT=$(ls /tmp/zip_extract | wc -l)
+            FIRST_ITEM=$(ls /tmp/zip_extract | head -1)
+            if [ "$ITEM_COUNT" -eq 1 ] && [ -d "/tmp/zip_extract/$FIRST_ITEM" ]; then
+              SRC_DIR="/tmp/zip_extract/$FIRST_ITEM"
+            else
+              SRC_DIR="/tmp/zip_extract"
+            fi
+
+            echo "Source dir: $SRC_DIR"
+            ls "$SRC_DIR"
+
+            # Overwrite repo files with extracted ones (same-name/same-path replacement)
+            cp -Rf "$SRC_DIR/." .
+
+            echo "::endgroup::"
+            CHANGED=1
+          done < /tmp/zip_list.txt
+
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          rm -rf /tmp/zip_extract
+
+      - name: Commit extracted files back to main
+        if: steps.extract.outputs.changed == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No file changes detected after extraction — tree already up to date." \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            git commit -m "chore: auto-extract zip contents into main — $TIMESTAMP [skip ci]"
+            git push origin main
+            echo "### Result" >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ Extracted files committed and pushed to \`main\`." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Cleanup temp files
+        if: always()
+        run: rm -rf /tmp/zip_extract /tmp/zip_list.txt

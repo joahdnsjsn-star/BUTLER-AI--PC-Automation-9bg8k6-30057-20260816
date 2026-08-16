@@ -1,0 +1,355 @@
+name: Unzip Update to Main
+
+on:
+  push:
+    branches:
+      - update
+    paths:
+      - '**/*.zip'
+  workflow_dispatch:
+    inputs:
+      zip_path:
+        description: Optional explicit zip path in repository
+        required: false
+        default: ''
+      zip_pattern:
+        description: Glob to find zip files when zip_path is not provided
+        required: false
+        default: '**/*.zip'
+      dry_run:
+        description: Validate and stage changes without commit/push
+        required: false
+        type: boolean
+        default: false
+      fail_if_no_zip:
+        description: Fail workflow if no zip is found
+        required: false
+        type: boolean
+        default: true
+      extraction_timeout_seconds:
+        description: Timeout for unzip attempt in seconds
+        required: false
+        default: '180'
+      extract_retries:
+        description: Number of unzip retries after initial attempt
+        required: false
+        default: '2'
+
+concurrency:
+  group: zip-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Deploy zip contents to target branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_BRANCH: main
+      ZIP_PATTERN: ${{ github.event.inputs.zip_pattern || '**/*.zip' }}
+      REQUESTED_ZIP: ${{ github.event.inputs.zip_path || '' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      FAIL_IF_NO_ZIP: ${{ github.event.inputs.fail_if_no_zip || 'true' }}
+      EXTRACT_TIMEOUT_SECONDS: ${{ github.event.inputs.extraction_timeout_seconds || '180' }}
+      EXTRACT_RETRIES: ${{ github.event.inputs.extract_retries || '2' }}
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout update branch
+        uses: actions/checkout@v4
+        with:
+          ref: update
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Resolve zip to deploy ─────────────────────────────────────────────
+      - name: Resolve zip to deploy
+        id: find_zip
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_PATH=""
+          if [ -n "$REQUESTED_ZIP" ]; then
+            if [ ! -f "$REQUESTED_ZIP" ]; then
+              echo "Requested zip does not exist: $REQUESTED_ZIP"
+              exit 1
+            fi
+            ZIP_PATH="$REQUESTED_ZIP"
+          fi
+
+<<<<<<< HEAD
+      # ── 3 + 4. Integrity check & Extract (combined to save runner overhead) ──────
+      - name: Verify integrity and extract zip
+        if: steps.find_zip.outputs.found == 'true'
+        id: extract_zip
+=======
+          if [ -z "$ZIP_PATH" ] && [ "${{ github.event_name }}" = "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            mapfile -t CHANGED_ZIPS < <(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- '*.zip' | sort)
+            if [ "${#CHANGED_ZIPS[@]}" -eq 1 ]; then
+              ZIP_PATH="${CHANGED_ZIPS[0]}"
+            elif [ "${#CHANGED_ZIPS[@]}" -gt 1 ]; then
+              echo "Multiple zip files changed in push:"
+              printf ' - %s\n' "${CHANGED_ZIPS[@]}"
+              echo "Use workflow_dispatch with zip_path to choose one."
+              exit 1
+            fi
+          fi
+
+          if [ -z "$ZIP_PATH" ]; then
+            mapfile -t ZIP_MATCHES < <(find . -not -path './.git/*' -type f -name '*.zip' -path "./$ZIP_PATTERN" | sed 's|^\./||' | sort)
+            if [ "${#ZIP_MATCHES[@]}" -gt 0 ]; then
+              ZIP_PATH="${ZIP_MATCHES[0]}"
+            fi
+          fi
+
+          if [ -z "$ZIP_PATH" ]; then
+            if [ "$FAIL_IF_NO_ZIP" = "true" ]; then
+              echo "No zip file found."
+              exit 1
+            fi
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No zip found, skipping deploy." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ ! -f "$ZIP_PATH" ]; then
+            echo "Resolved zip path is not a file: $ZIP_PATH"
+            exit 1
+          fi
+
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "zip_path=$ZIP_PATH" >> "$GITHUB_OUTPUT"
+          echo "### 📦 Zip received" >> "$GITHUB_STEP_SUMMARY"
+          echo "- File: \`$ZIP_PATH\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Size: $(du -sh "$ZIP_PATH" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 3. Integrity + safety check ──────────────────────────────────────────
+      - name: Verify zip integrity and safety
+        if: steps.find_zip.outputs.found == 'true'
+        id: integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="${{ steps.find_zip.outputs.zip_path }}"
+
+          # Integrity test
+          if unzip -t "$ZIP" > /tmp/zip-integrity.txt 2>&1; then
+            FILE_COUNT=$(grep -c 'testing:' /tmp/zip-integrity.txt || true)
+            echo "integrity_ok=true" >> "$GITHUB_OUTPUT"
+            echo "- Integrity: ✅ OK ($FILE_COUNT entries)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "integrity_ok=false" >> "$GITHUB_OUTPUT"
+            cat /tmp/zip-integrity.txt >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Zip file is corrupted — it will NOT be deployed or deleted. Fix the zip and re-push."
+            exit 1
+          fi
+
+          # Path safety: block traversal and protected paths
+          unzip -Z1 "$ZIP" > /tmp/zip_entries.txt
+          while IFS= read -r entry; do
+            norm="${entry#./}"
+            case "$norm" in
+              /*|..|../*|*/../*)
+                echo "Unsafe path in zip: $entry"; exit 1 ;;
+            esac
+            case "$norm" in
+              .git|.git/*|.github/workflows|.github/workflows/*)
+                echo "Blocked path in zip: $entry"; exit 1 ;;
+            esac
+          done < /tmp/zip_entries.txt
+          echo "- Path safety: ✅ No unsafe paths" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 4. Extract with retries and timeout ──────────────────────────────────
+      - name: Extract zip
+        if: steps.find_zip.outputs.found == 'true' && steps.integrity.outputs.integrity_ok == 'true'
+        id: extract
+>>>>>>> origin/main
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP="${{ steps.find_zip.outputs.zip_path }}"
+<<<<<<< HEAD
+
+          # ── integrity ──
+          if ! unzip -t "$ZIP" > /tmp/zip-integrity.txt 2>&1; then
+            cat /tmp/zip-integrity.txt >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Zip file is corrupted — it will NOT be deployed. Fix the zip and re-push."
+            exit 1
+          fi
+          FILE_COUNT=$(grep -c 'testing:' /tmp/zip-integrity.txt || true)
+          echo "- Integrity: ✅ OK ($FILE_COUNT entries)" >> "$GITHUB_STEP_SUMMARY"
+
+          # ── extract ──
+          rm -rf /tmp/zip_extract /tmp/zip_source
+          mkdir -p /tmp/zip_extract /tmp/zip_source
+          unzip -q -o "$ZIP" -d /tmp/zip_extract
+=======
+          ATTEMPT=0
+          MAX_ATTEMPTS=$((EXTRACT_RETRIES + 1))
+>>>>>>> origin/main
+
+          while [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            rm -rf /tmp/zip_extract /tmp/zip_source
+            mkdir -p /tmp/zip_extract /tmp/zip_source
+
+            if timeout "${EXTRACT_TIMEOUT_SECONDS}s" unzip -q -o "$ZIP" -d /tmp/zip_extract; then
+              echo "Extraction succeeded on attempt $ATTEMPT."
+              break
+            fi
+            if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+              echo "Extraction failed after $ATTEMPT attempts."; exit 1
+            fi
+            echo "Attempt $ATTEMPT failed, retrying..."
+          done
+
+          # Unwrap single top-level folder (common zip convention)
+          python3 - <<'PY'
+          import os, shutil, sys
+          src  = "/tmp/zip_extract"
+          dest = "/tmp/zip_source"
+          items = [os.path.join(src, name) for name in os.listdir(src)]
+          dirs  = [item for item in items if os.path.isdir(item)]
+          root  = dirs[0] if len(items) == 1 and len(dirs) == 1 else src
+          moved = 0
+          for name in os.listdir(root):
+              shutil.move(os.path.join(root, name), os.path.join(dest, name))
+              moved += 1
+          if moved == 0:
+              print("ERROR: zip extracted 0 files — aborting", file=sys.stderr); sys.exit(1)
+          print(f"Moved {moved} top-level entries to {dest}")
+          PY
+
+          EXTRACTED=$(find /tmp/zip_source -type f | wc -l)
+          echo "source_dir=/tmp/zip_source" >> "$GITHUB_OUTPUT"
+<<<<<<< HEAD
+          echo "extracted_files=$EXTRACTED" >> "$GITHUB_OUTPUT"
+          echo "- Extracted: **$EXTRACTED files** to staging area" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 4. OnSpace compatibility check ───────────────────────────────────────
+=======
+          echo "- Extracted: **$EXTRACTED files** to staging area" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 5. OnSpace compatibility check ───────────────────────────────────────
+      # The workflow checks out the `update` branch (zip-only; no source code).
+      # The compat tool only lives on the target branch (main).  We fetch it from
+      # there so the check always runs against the trusted, versioned tool — not
+      # a copy that could be embedded inside the uploaded zip.
+>>>>>>> origin/main
+      - name: Validate OnSpace compatibility
+        if: steps.find_zip.outputs.found == 'true'
+        id: validate_zip
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Fetch the compat tool from the target branch.
+          # Falls back to skipping (with a warning) if the tool doesn't exist yet.
+          mkdir -p /tmp/onspace-tools
+          TOOL=/tmp/onspace-tools/check-onspace-compat.mjs
+          if git show "origin/${TARGET_BRANCH}:tools/check-onspace-compat.mjs" > "$TOOL" 2>/dev/null; then
+            echo "- Compat tool: fetched from \`$TARGET_BRANCH\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::tools/check-onspace-compat.mjs not found on $TARGET_BRANCH — skipping compat check."
+            echo "- Compat check: ⚠️ skipped (tool not found on \`$TARGET_BRANCH\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "deploy_ok=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          set +e
+          node "$TOOL" "${{ steps.extract.outputs.source_dir }}" > /tmp/onspace-compat.txt 2>&1
+          STATUS=$?
+          set -e
+          cat /tmp/onspace-compat.txt >> "$GITHUB_STEP_SUMMARY"
+          if [ "$STATUS" -eq 0 ]; then
+            echo "deploy_ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy_ok=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Deployment blocked by OnSpace compatibility safeguard. Fix the issues above and re-push."
+            exit 1
+          fi
+
+      # ── 5. Deploy to main ─────────────────────────────────────────────────────
+      - name: Deploy extracted contents to main
+        if: steps.find_zip.outputs.found == 'true' && steps.validate_zip.outputs.deploy_ok == 'true'
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin "$TARGET_BRANCH"
+          git checkout "$TARGET_BRANCH"
+
+          rsync -a --delete --exclude '.git/' "${{ steps.extract.outputs.source_dir }}/" ./
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "deployed=false" >> "$GITHUB_OUTPUT"
+            echo "- main already matches the uploaded zip — nothing to change." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+<<<<<<< HEAD
+      # ── 6. Verify deployment ─────────────────────────────────────────────────
+=======
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run enabled: commit and push skipped." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          git commit -m "deploy: replace ${TARGET_BRANCH} from zip (${{ steps.find_zip.outputs.zip_path }}) — ${TIMESTAMP}"
+
+          # Push with retry (3 attempts, 10 s back-off)
+          for ATTEMPT in 1 2 3; do
+            if git push origin "$TARGET_BRANCH"; then
+              echo "deployed=true" >> "$GITHUB_OUTPUT"
+              echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+              break
+            fi
+            if [ "$ATTEMPT" -lt 3 ]; then
+              echo "Push attempt $ATTEMPT failed — retrying in 10 s …"
+              sleep 10
+              git fetch origin "$TARGET_BRANCH"
+              git rebase "origin/$TARGET_BRANCH"
+            else
+              echo "::error::All 3 push attempts failed. Zip is safe on the update branch."
+              exit 1
+            fi
+          done
+
+          echo "### ✅ Deployment status" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Deployed to \`$TARGET_BRANCH\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`$DEPLOY_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── 7. Verify deployment ─────────────────────────────────────────────────
+>>>>>>> origin/main
+      - name: Verify deployment on main
+        if: steps.deploy.outputs.deployed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "$TARGET_BRANCH"
+          REMOTE_SHA=$(git rev-parse "origin/$TARGET_BRANCH")
+          if [ "$REMOTE_SHA" = "$DEPLOY_SHA" ]; then
+            echo "- Remote $TARGET_BRANCH matches deployed commit \`$DEPLOY_SHA\` ✅" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Verification failed — remote SHA ($REMOTE_SHA) ≠ deployed SHA ($DEPLOY_SHA)."
+            exit 1
+          fi
+
+      # ── 7. Cleanup ────────────────────────────────────────────────────────────
+      - name: Cleanup temp files
+        if: always()
+<<<<<<< HEAD
+        shell: bash
+        run: rm -rf /tmp/zip_extract /tmp/zip_source /tmp/onspace-compat.txt /tmp/zip-integrity.txt
+=======
+        run: rm -rf /tmp/zip_extract /tmp/zip_source /tmp/onspace-tools /tmp/onspace-compat.txt /tmp/zip-integrity.txt /tmp/zip_entries.txt
+>>>>>>> origin/main

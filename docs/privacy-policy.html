@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Butler AI Privacy Policy, Terms of Service, and Data Safety Declaration — Zero data collection, no cloud, fully local Android app for remote PC automation." />
+  <meta name="robots" content="index, follow" />
+  <title>Privacy Policy – Butler AI Automation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #0a0f1a;
+      color: #c8d8e8;
+      line-height: 1.7;
+      padding: 0 16px 60px;
+    }
+    .wrap { max-width: 780px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, #001a28 0%, #003344 100%);
+      border-bottom: 3px solid #00ccdd;
+      padding: 36px 16px 28px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #00eeff;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+    header p { font-size: 13px; color: #336677; letter-spacing: 0.5px; }
+
+    /* ── Navigation / Table of Contents ── */
+    .toc {
+      background: rgba(0,204,221,0.06);
+      border: 1.5px solid rgba(0,204,221,0.25);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 28px 0 10px;
+    }
+    .toc h2 { color: #00ccdd; font-size: 12px; font-weight: 900; letter-spacing: 2px; margin-bottom: 14px; }
+    .toc-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .toc a {
+      display: inline-block;
+      background: rgba(0,204,221,0.10);
+      border: 1px solid rgba(0,204,221,0.35);
+      color: #00ccdd;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 13px;
+      border-radius: 5px;
+      letter-spacing: 0.6px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .toc a:hover { background: rgba(0,204,221,0.22); }
+    .toc a.green { background: rgba(68,255,136,0.10); border-color: rgba(68,255,136,0.35); color: #44ff88; }
+    .toc a.amber { background: rgba(255,140,0,0.10); border-color: rgba(255,140,0,0.35); color: #ff8c00; }
+    .toc a.red   { background: rgba(255,60,60,0.10); border-color: rgba(255,60,60,0.35); color: #ff4444; }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .badge {
+      background: rgba(0,204,221,0.12);
+      border: 1px solid rgba(0,204,221,0.4);
+      color: #00ccdd;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 4px;
+      letter-spacing: 0.8px;
+    }
+    .badge.green { background: rgba(68,255,136,0.10); border-color: rgba(68,255,136,0.4); color: #44ff88; }
+    .badge.amber { background: rgba(255,140,0,0.10); border-color: rgba(255,140,0,0.4); color: #ff8c00; }
+    main { padding-top: 32px; }
+    .summary-box {
+      background: rgba(0,204,221,0.07);
+      border: 1.5px solid rgba(0,204,221,0.35);
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-bottom: 32px;
+    }
+    .summary-box h2 { color: #44ff88; font-size: 15px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
+    .summary-box p { font-size: 14px; color: #99bbcc; line-height: 1.8; }
+
+    /* ── Anchor offset fix: so #anchors aren't hidden behind sticky navbars ── */
+    .anchor-target {
+      display: block;
+      position: relative;
+      top: -16px;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* ── Section divider with colored left-border accent ── */
+    h2.section {
+      font-size: 13px;
+      font-weight: 900;
+      color: #00ccdd;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      padding-left: 12px;
+      border-left: 3px solid #00ccdd;
+      margin: 36px 0 14px;
+    }
+    h2.section.green { color: #44ff88; border-left-color: #44ff88; }
+    h2.section.amber { color: #ff8c00; border-left-color: #ff8c00; }
+    h2.section.red   { color: #ff4444; border-left-color: #ff4444; }
+    h2.section.purple{ color: #cc44ff; border-left-color: #cc44ff; }
+
+    /* ── Anchor badge shown beside section headings ── */
+    .anchor-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-left: 10px;
+      vertical-align: middle;
+      border: 1px solid;
+      opacity: 0.75;
+    }
+    .anchor-badge.cyan   { color: #00ccdd; border-color: #00ccdd55; background: rgba(0,204,221,0.08); }
+    .anchor-badge.green  { color: #44ff88; border-color: #44ff8855; background: rgba(68,255,136,0.08); }
+    .anchor-badge.amber  { color: #ff8c00; border-color: #ff8c0055; background: rgba(255,140,0,0.08); }
+    .anchor-badge.red    { color: #ff4444; border-color: #ff444455; background: rgba(255,68,68,0.08); }
+
+    .card {
+      background: #060f18;
+      border: 1px solid #0d1a24;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+    }
+    .card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #88aacc;
+      margin-bottom: 10px;
+    }
+    .card p, .card li { font-size: 13px; color: #668899; line-height: 1.75; }
+    .card ul { padding-left: 18px; }
+    .card li { margin-bottom: 5px; }
+    .check-list { list-style: none !important; padding-left: 0 !important; }
+    .check-list li::before { content: "✓ "; color: #44ff88; font-weight: 700; }
+    .cross-list { list-style: none !important; padding-left: 0 !important; }
+    .cross-list li::before { content: "✗ "; color: #ff3300; font-weight: 700; }
+
+    /* ── Highlight card variants ── */
+    .card.terms-card  { border-color: #ff8c0025; border-left: 3px solid #ff8c00; }
+    .card.safety-card { border-color: #44ff8825; border-left: 3px solid #44ff88; }
+    .card.delete-card { border-color: #ff444425; border-left: 3px solid #ff4444; }
+
+    .perm-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 13px 0;
+      border-bottom: 1px solid #0d1a24;
+    }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-name {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ff8c00;
+      letter-spacing: 0.8px;
+      min-width: 180px;
+      padding-top: 2px;
+    }
+    .perm-desc { font-size: 12px; color: #668899; line-height: 1.65; }
+
+    /* ── Data table (for Data Safety) ── */
+    .data-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .data-table th {
+      font-size: 10px;
+      font-weight: 900;
+      color: #44ff88;
+      letter-spacing: 1px;
+      text-align: left;
+      padding: 10px 12px;
+      background: rgba(68,255,136,0.06);
+      border-bottom: 1px solid #0d1a24;
+    }
+    .data-table td {
+      font-size: 12px;
+      color: #668899;
+      padding: 9px 12px;
+      border-bottom: 1px solid #0a1520;
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table td.label { font-weight: 700; color: #88aacc; white-space: nowrap; }
+    .yes { color: #44ff88; font-weight: 700; }
+    .no  { color: #ff4444; font-weight: 700; }
+    .na  { color: #336677; }
+
+    /* ── Deletion steps ── */
+    .step-list { list-style: none !important; padding-left: 0 !important; counter-reset: step; }
+    .step-list li {
+      counter-increment: step;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #0d1a24;
+    }
+    .step-list li:last-child { border-bottom: none; }
+    .step-list li::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(255,68,68,0.15);
+      border: 1px solid rgba(255,68,68,0.4);
+      color: #ff4444;
+      font-size: 11px;
+      font-weight: 900;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .contact-box {
+      background: rgba(0,221,255,0.07);
+      border: 1.5px solid rgba(0,221,255,0.35);
+      border-radius: 10px;
+      padding: 24px;
+      margin-top: 32px;
+      text-align: center;
+    }
+    .contact-box h2 { color: #00ddff; font-size: 16px; margin-bottom: 8px; }
+    .contact-box a { color: #00eeff; font-weight: 700; font-size: 15px; text-decoration: none; }
+    .contact-box a:hover { text-decoration: underline; }
+    .contact-box p { font-size: 12px; color: #336677; margin-top: 8px; }
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: #336677;
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid #0d1a24;
+      letter-spacing: 0.6px;
+    }
+    @media (max-width: 520px) {
+      header h1 { font-size: 20px; }
+      .perm-name { min-width: 130px; font-size: 10px; }
+      .data-table th, .data-table td { padding: 7px 8px; font-size: 11px; }
+    }
+
+    /* ── Smooth scroll for all anchor links ── */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>🔒 LEGAL DOCUMENTS</h1>
+      <p>Butler AI Automation &nbsp;·&nbsp; Android App &nbsp;·&nbsp; Effective May 18, 2026</p>
+      <div class="badge-row">
+        <span class="badge green">ZERO DATA COLLECTION</span>
+        <span class="badge green">NO CLOUD SERVERS</span>
+        <span class="badge">LAN ONLY</span>
+        <span class="badge">NO ACCOUNTS</span>
+        <span class="badge amber">CAMERA: QR SCAN ONLY</span>
+        <span class="badge">OPEN SOURCE SERVER</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <main>
+
+      <!-- ── Table of Contents / Quick Nav ── -->
+      <div class="toc">
+        <h2>QUICK NAVIGATION</h2>
+        <div class="toc-grid">
+          <a href="#privacy-policy">🔒 Privacy Policy</a>
+          <a href="#terms-of-service" class="amber">⚖️ Terms of Service</a>
+          <a href="#data-safety" class="green">🛡️ Data Safety</a>
+          <a href="#data-deletion" class="red">🗑️ Data Deletion</a>
+          <a href="#permissions">📋 Permissions</a>
+          <a href="#contact">✉️ Contact</a>
+        </div>
+      </div>
+
+      <!-- TL;DR summary -->
+      <div class="summary-box">
+        <h2>PLAIN ENGLISH SUMMARY</h2>
+        <p>
+          Butler AI is a <strong>100% self-hosted</strong> remote PC automation tool. It connects your Android phone to a Python server running on <em>your own PC</em> over your local Wi-Fi. <strong>We collect zero personal data. We have no servers. Your scripts, settings, and chat history never leave your home network.</strong> The Camera permission is used exclusively when you tap the QR scan button to pair with your PC — nothing is photographed or stored.
+        </p>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 1: PRIVACY POLICY
+           ═══════════════════════════════════════════════════════════ -->
+      <span id="privacy-policy" class="anchor-target"></span>
+      <h2 class="section">Privacy Policy
+        <span class="anchor-badge cyan">SECTION 1</span>
+      </h2>
+
+      <!-- 1a. Information We Collect -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1a. Information We Collect</h2>
+      <div class="card">
+        <h3>Data Stored Locally on Your Device</h3>
+        <p>The following data is stored only in your phone's private app storage (Android AsyncStorage). It is <strong>never uploaded, transmitted, or shared</strong> with any external server, company, or third party:</p>
+        <ul class="check-list" style="margin-top:12px;">
+          <li>Your PC's local IP address and port number</li>
+          <li>Session pairing token (cryptographic HMAC hash, not a password)</li>
+          <li>App settings and preferences</li>
+          <li>Python scripts you save in the Script Library</li>
+          <li>Execution history (command logs)</li>
+          <li>Knowledge Base entries (auto-generated Python reference notes)</li>
+          <li>Chat history with the local AI (stored only on-device)</li>
+        </ul>
+      </div>
+
+      <!-- 1b. Data We Do NOT Collect -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1b. Data We Never Collect</h2>
+      <div class="card">
+        <p>We <strong>explicitly do not collect, access, store, or transmit</strong> any of the following:</p>
+        <ul class="cross-list" style="margin-top:12px;">
+          <li>Name, email address, phone number, or any personal identity</li>
+          <li>GPS location or network-based location data</li>
+          <li>Device contacts, calendar entries, or call logs</li>
+          <li>Photos, camera images, or gallery content</li>
+          <li>Microphone audio or voice recordings</li>
+          <li>SMS messages or notification content</li>
+          <li>Advertising IDs or device fingerprints</li>
+          <li>Browser history, cookies, or web tracking data</li>
+          <li>Health, financial, or biometric data</li>
+          <li>Crash reports or diagnostic telemetry</li>
+          <li>Usage analytics, heatmaps, or session recordings</li>
+        </ul>
+      </div>
+
+      <!-- 1c. Camera Permission -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1c. Camera Permission</h2>
+      <div class="card">
+        <h3>CAMERA — Used Only for QR Code Pairing</h3>
+        <p>
+          Butler AI requests the <code>android.permission.CAMERA</code> permission for <strong>one purpose only</strong>: scanning a QR code displayed by the <code>butler_server.py</code> Python script running on your PC. This QR code contains your PC's local IP address and a pairing token so you do not need to type them manually.
+        </p>
+        <br />
+        <ul class="check-list">
+          <li>Camera is <strong>only activated</strong> when you tap the "Scan QR" button on the Home screen</li>
+          <li>Camera is <strong>never activated in the background</strong></li>
+          <li>No photos, screenshots, or images are captured, saved, or transmitted</li>
+          <li>QR scan data stays on-device only (the IP and token are saved locally)</li>
+          <li>You can pair manually by typing your IP — camera is optional</li>
+        </ul>
+      </div>
+
+      <!-- 1d. Data Transmission -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1d. How Data Is Transmitted</h2>
+      <div class="card">
+        <p>
+          All communication occurs exclusively between your Android phone and your personal PC over your <strong>local home or office Wi-Fi network</strong> (192.168.x.x, 10.x.x.x, or similar private ranges). No data is routed through the internet, our servers, or any third-party relay during standard operation.
+        </p>
+        <br />
+        <p>
+          <strong>Optional AI Relay (Φ-NEXUS Bridge):</strong> If you explicitly enable the optional cloud AI relay in Settings, Butler AI may send your typed question text to a Supabase Edge Function, which queries Google Gemini. This feature is <strong>disabled by default</strong>. No personal identity, IP address, scripts, or location is included in these requests. You can permanently disable this under Settings → Φ-NEXUS Bridge → Local-Only Mode.
+        </p>
+      </div>
+
+      <!-- 1e. Third-Party Services -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1e. Third-Party Services</h2>
+      <div class="card">
+        <h3>Ollama Local AI (Optional, 100% Local)</h3>
+        <p>If you install Ollama on your PC, your AI chat conversations are processed entirely on your own hardware. No data leaves your local network. Ollama is open source (MIT License). <a href="https://ollama.com/privacy" style="color:#00ccdd;">Ollama Privacy Policy →</a></p>
+        <br />
+        <h3>Supabase / Google Gemini (Optional, Opt-In Only)</h3>
+        <p>Used only if you enable the Φ-NEXUS Bridge relay. Only anonymized query text is sent — no personal data. <a href="https://supabase.com/privacy" style="color:#00ccdd;">Supabase Privacy →</a> &nbsp; <a href="https://policies.google.com/privacy" style="color:#00ccdd;">Google Privacy →</a></p>
+        <br />
+        <h3>No Analytics SDKs</h3>
+        <p>Butler AI contains <strong>zero</strong> analytics, crash reporting, or advertising SDKs. No Firebase Analytics, Crashlytics, Facebook SDK, Amplitude, Mixpanel, Sentry, or any tracking library is included.</p>
+      </div>
+
+      <!-- 1f. Data Security -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1f. Data Security</h2>
+      <div class="card">
+        <ul class="check-list">
+          <li>Device pairing uses HMAC-SHA256 cryptographic signatures — no plain-text passwords</li>
+          <li>Session tokens expire automatically after 30 days</li>
+          <li>Your PC server locks to one device at a time — new pairing revokes old one</li>
+          <li>All app data is stored in Android's private app sandbox — other apps cannot read it</li>
+          <li>Data is automatically wiped when you uninstall the app</li>
+          <li>Python scripts are executed in isolated subprocesses with a 30-second timeout</li>
+          <li>Built-in Safety Guard scans scripts for dangerous patterns before execution</li>
+        </ul>
+      </div>
+
+      <!-- 1g. Children's Privacy -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1g. Children's Privacy</h2>
+      <div class="card">
+        <p>Butler AI is a developer productivity tool and is <strong>not directed at children under 18</strong>. We do not knowingly collect any personal information from minors. Since we collect no personal information from anyone, this policy applies uniformly to all users. Users must be 18 years of age or older to use this application.</p>
+      </div>
+
+      <!-- 1h. Changes to Policy -->
+      <h2 class="section" style="font-size:11px; margin-top:18px;">1h. Changes to This Policy</h2>
+      <div class="card">
+        <p>We may update this Privacy Policy when we add new features. The "Effective" date at the top will be updated. Significant changes will be noted in the app's changelog. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
+      </div>
+
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 2: TERMS OF SERVICE
+           ═══════════════════════════════════════════════════════════ -->
+      <span id="terms-of-service" class="anchor-target"></span>
+      <h2 class="section amber" style="margin-top:48px;">Terms of Service
+        <span class="anchor-badge amber">SECTION 2</span>
+      </h2>
+
+      <div class="card terms-card">
+        <h3 style="color:#ff8c00;">Effective Date: May 18, 2026 · Package: com.butlerai.pc.automation</h3>
+        <p>By downloading, installing, or using Butler AI: PC Automation ("App"), you agree to these Terms of Service. If you do not agree, do not use the App.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>1. Eligibility — 18+ Only</h3>
+        <p>You must be <strong>at least 18 years of age</strong> to use this App. This App is a developer tool for remote PC automation. It involves executing commands on computer hardware, which requires adult understanding and legal responsibility. By using the App, you confirm you are 18 or older.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>2. Permitted Use</h3>
+        <p>Butler AI is licensed for <strong>personal, lawful use only</strong>. You may use the App to:</p>
+        <ul class="check-list" style="margin-top:10px;">
+          <li>Remotely control computers you own or are explicitly authorised to administer</li>
+          <li>Run Python automation scripts on your personal hardware</li>
+          <li>Monitor system metrics of your own computers</li>
+          <li>Use the local AI assistant (Ollama) running on your own hardware</li>
+        </ul>
+      </div>
+
+      <div class="card terms-card">
+        <h3>3. Prohibited Use</h3>
+        <p>You may <strong>NOT</strong> use Butler AI to:</p>
+        <ul class="cross-list" style="margin-top:10px;">
+          <li>Access, control, or execute commands on any computer you do not own or are not explicitly authorised to administer</li>
+          <li>Deploy malware, ransomware, spyware, or any destructive software</li>
+          <li>Violate the privacy, security, or intellectual property rights of others</li>
+          <li>Engage in any activity that is illegal under applicable local, national, or international law</li>
+          <li>Circumvent security controls, authentication systems, or access restrictions on third-party systems</li>
+          <li>Attempt to reverse-engineer, decompile, or extract source code from the App</li>
+          <li>Resell, sublicense, or distribute the App without written permission</li>
+        </ul>
+      </div>
+
+      <div class="card terms-card">
+        <h3>4. User Responsibility</h3>
+        <p>You are <strong>solely and entirely responsible</strong> for all scripts, commands, and actions executed through Butler AI. The built-in Malicious Script Blocker is a best-effort safety aid, not a guarantee. You must review every script before execution. The developer(s) of Butler AI accept no liability for data loss, hardware damage, system compromise, or any other harm resulting from your use of the App.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>5. Open Source Server</h3>
+        <p>The <code>butler_server.py</code> PC server component is provided for personal use. The mobile application source code is proprietary. You may not copy, distribute, or commercially exploit the App without express written consent from the developer.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>6. No Warranty</h3>
+        <p>Butler AI is provided "as is" without warranty of any kind, express or implied. We do not warrant that the App will be error-free, uninterrupted, or free from security vulnerabilities. Your use of the App is at your sole risk.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>7. Limitation of Liability</h3>
+        <p>To the maximum extent permitted by applicable law, the developer(s) shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the App, including but not limited to data loss, system damage, or security breaches.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>8. Governing Law</h3>
+        <p>These Terms are governed by applicable law. Disputes shall be resolved in the jurisdiction of the developer's place of business. If any provision of these Terms is found unenforceable, the remaining provisions remain in full effect.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>9. Changes to Terms</h3>
+        <p>We may update these Terms at any time. Continued use of the App after changes constitutes acceptance of the updated Terms. We will update the Effective Date above with each revision.</p>
+      </div>
+
+      <div class="card terms-card">
+        <h3>10. Contact</h3>
+        <p>Questions about these Terms? Email: <a href="mailto:andrejsladkovic1992@gmail.com" style="color:#ff8c00;">andrejsladkovic1992@gmail.com</a></p>
+      </div>
+
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 3: DATA SAFETY DECLARATION
+           ═══════════════════════════════════════════════════════════ -->
+      <span id="data-safety" class="anchor-target"></span>
+      <h2 class="section green" style="margin-top:48px;">Data Safety Declaration
+        <span class="anchor-badge green">SECTION 3</span>
+      </h2>
+
+      <div class="card safety-card">
+        <h3 style="color:#44ff88;">Google Play Data Safety — Butler AI: PC Automation</h3>
+        <p>This section mirrors the Data Safety form submitted to the Google Play Store. It describes exactly what data this app collects, uses, and shares.</p>
+      </div>
+
+      <div class="card safety-card">
+        <h3>Top-Level Declarations</h3>
+        <table class="data-table">
+          <tr>
+            <th>Question</th>
+            <th>Answer</th>
+          </tr>
+          <tr>
+            <td class="label">Does the app collect or share any required user data types?</td>
+            <td><span class="yes">YES</span> — Device ID only (see below)</td>
+          </tr>
+          <tr>
+            <td class="label">Is all user data encrypted in transit?</td>
+            <td><span class="yes">YES</span> — HMAC-SHA256 on LAN; HTTPS to any external APIs</td>
+          </tr>
+          <tr>
+            <td class="label">Do you provide a way for users to request data deletion?</td>
+            <td><span class="yes">YES</span> — See <a href="#data-deletion" style="color:#44ff88;">Data Deletion section</a></td>
+          </tr>
+          <tr>
+            <td class="label">Does the app follow the Families Policy?</td>
+            <td><span class="no">NO</span> — App is 18+ only, not for children</td>
+          </tr>
+          <tr>
+            <td class="label">Has the app been independently security reviewed?</td>
+            <td><span class="na">NOT YET</span> — Planned for future release</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card safety-card">
+        <h3>Data Types Declared</h3>
+        <table class="data-table">
+          <tr>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Collected</th>
+            <th>Shared</th>
+            <th>Purpose</th>
+          </tr>
+          <tr>
+            <td class="label">Device or Other IDs</td>
+            <td>Random UUID</td>
+            <td><span class="yes">YES</span></td>
+            <td><span class="no">NO</span></td>
+            <td>App functionality — PC pairing authentication (LAN only)</td>
+          </tr>
+          <tr>
+            <td class="label">App Activity</td>
+            <td>App interactions</td>
+            <td><span class="yes">YES</span></td>
+            <td><span class="no">NO</span></td>
+            <td>App functionality — connection state, settings</td>
+          </tr>
+          <tr>
+            <td class="label">App Activity</td>
+            <td>Other actions</td>
+            <td><span class="yes">YES</span></td>
+            <td><span class="no">NO</span></td>
+            <td>App functionality — LAN discovery (one-time, consensual)</td>
+          </tr>
+          <tr>
+            <td class="label">Messages (optional)</td>
+            <td>Chat text (AI relay only)</td>
+            <td><span class="yes">YES*</span></td>
+            <td><span class="yes">YES*</span></td>
+            <td>App functionality — AI response via Supabase/Gemini (opt-in only)</td>
+          </tr>
+        </table>
+        <p style="font-size:11px; color:#336677; margin-top:10px;">* Only applies if user explicitly enables the optional Φ-NEXUS cloud AI relay in Settings. Disabled by default. No personal identifiers included.</p>
+      </div>
+
+      <div class="card safety-card">
+        <h3>Data Types NOT Declared (Never Collected)</h3>
+        <table class="data-table">
+          <tr>
+            <th>Category</th>
+            <th>Collected?</th>
+            <th>Reason</th>
+          </tr>
+          <tr><td class="label">Photos and Videos</td><td><span class="no">NO</span></td><td>Camera QR scan is transient in-memory only, never persisted or transmitted</td></tr>
+          <tr><td class="label">Location (precise or approximate)</td><td><span class="no">NO</span></td><td>Never accessed or requested</td></tr>
+          <tr><td class="label">Contacts</td><td><span class="no">NO</span></td><td>Never accessed or requested</td></tr>
+          <tr><td class="label">SMS / MMS</td><td><span class="no">NO</span></td><td>Never accessed or requested</td></tr>
+          <tr><td class="label">Microphone / Audio</td><td><span class="no">NO</span></td><td>Never accessed or requested</td></tr>
+          <tr><td class="label">Financial Info</td><td><span class="no">NO</span></td><td>No purchases or payments in app</td></tr>
+          <tr><td class="label">Health and Fitness</td><td><span class="no">NO</span></td><td>Never accessed or requested</td></tr>
+          <tr><td class="label">Web Browsing</td><td><span class="no">NO</span></td><td>No browser activity tracking</td></tr>
+          <tr><td class="label">Crash Logs / Diagnostics</td><td><span class="no">NO</span></td><td>No crash reporting SDK included</td></tr>
+          <tr><td class="label">Advertising ID</td><td><span class="no">NO</span></td><td>No ads, no ad SDKs</td></tr>
+        </table>
+      </div>
+
+      <div class="card safety-card">
+        <h3>Device ID — Additional Detail</h3>
+        <p>A random UUID is generated at first app launch and stored locally. It is sent <strong>only</strong> to the user's own PC server on their own local network for one-time pairing authentication. It is:</p>
+        <ul class="check-list" style="margin-top:10px;">
+          <li>Never sent to our servers or any third party</li>
+          <li>Not persistent across reinstalls (new UUID generated on fresh install)</li>
+          <li>Deleted permanently when user deletes all data or uninstalls the app</li>
+          <li>Not linkable to any personal identity</li>
+        </ul>
+      </div>
+
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 4: DATA DELETION
+           ═══════════════════════════════════════════════════════════ -->
+      <span id="data-deletion" class="anchor-target"></span>
+      <h2 class="section red" style="margin-top:48px;">Data Deletion / Account Deletion
+        <span class="anchor-badge red">SECTION 4</span>
+      </h2>
+
+      <div class="card delete-card">
+        <h3 style="color:#ff4444;">Required by Google Play — Per Google's 2024 Policy Update</h3>
+        <p>Google Play requires all apps that store user data to provide a clear and accessible way for users to delete their data. Butler AI fully complies. We provide <strong>three independent deletion paths</strong>.</p>
+      </div>
+
+      <div class="card delete-card">
+        <h3>Path 1 — In-App Deletion (Fastest — 3 Taps)</h3>
+        <ul class="step-list">
+          <li>Open Butler AI on your Android device</li>
+          <li>Tap <strong>CONFIG</strong> tab (bottom navigation bar, last icon)</li>
+          <li>Scroll down to <strong>PERSONAL FILES &amp; ACCOUNT</strong> section</li>
+          <li>Tap <strong>DELETE ALL MY DATA</strong> — confirm in the dialog</li>
+          <li>All locally stored data is permanently and immediately erased</li>
+        </ul>
+      </div>
+
+      <div class="card delete-card">
+        <h3>Path 2 — Uninstall the App</h3>
+        <p style="margin-bottom:10px;">Android automatically deletes all private app data when an app is uninstalled. This includes all AsyncStorage data, including device UUID, session tokens, scripts, knowledge base entries, and execution history.</p>
+        <ul class="step-list">
+          <li>Long-press the Butler AI icon on your home screen</li>
+          <li>Tap <strong>Uninstall</strong> → confirm</li>
+          <li>All app data is permanently deleted by Android</li>
+        </ul>
+      </div>
+
+      <div class="card delete-card">
+        <h3>Path 3 — Email Deletion Request</h3>
+        <p>Send an email to <a href="mailto:andrejsladkovic1992@gmail.com?subject=Butler%20AI%20Data%20Deletion%20Request" style="color:#ff4444;">andrejsladkovic1992@gmail.com</a> with subject "Butler AI Data Deletion Request". We respond within 48 hours.</p>
+        <p style="margin-top:8px; font-size:12px; color:#336677;">Note: Since we operate no server-side user database, there is no cloud data to delete. The email confirmation simply acknowledges your request and confirms no server-side data exists for your account.</p>
+      </div>
+
+      <div class="card delete-card">
+        <h3>What Exactly Gets Deleted</h3>
+        <table class="data-table">
+          <tr>
+            <th>Data Item</th>
+            <th>In-App Delete</th>
+            <th>Uninstall</th>
+          </tr>
+          <tr><td class="label">Device UUID (pairing ID)</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Session / HMAC token</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Server IP &amp; port</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">All app settings</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Script library</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Execution history</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Knowledge base entries</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">AI chat history</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Onboarding consents</td><td><span class="yes">YES</span></td><td><span class="yes">YES</span></td></tr>
+          <tr><td class="label">Cloud / server-side data</td><td><span class="na">NONE EXISTS</span></td><td><span class="na">NONE EXISTS</span></td></tr>
+        </table>
+      </div>
+
+      <div class="card delete-card">
+        <h3>After Deletion</h3>
+        <p>After using the in-app "DELETE ALL MY DATA" function, the app will show the onboarding screens again on next launch, as if it were a fresh install. Your PC server (<code>butler_server.py</code>) is not affected — it must be reset separately if desired.</p>
+      </div>
+
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 5: PERMISSIONS
+           ═══════════════════════════════════════════════════════════ -->
+      <span id="permissions" class="anchor-target"></span>
+      <h2 class="section" style="margin-top:48px;">All Android Permissions
+        <span class="anchor-badge cyan">SECTION 5</span>
+      </h2>
+
+      <div class="card">
+        <div class="perm-row">
+          <div class="perm-name">INTERNET</div>
+          <div class="perm-desc">Required to communicate with your <code>butler_server.py</code> over your local Wi-Fi. Only LAN traffic — no internet endpoints are contacted during normal use.</div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-name">CAMERA</div>
+          <div class="perm-desc">Used <strong>only</strong> when you tap "Scan QR Code" to pair with your PC. No images stored. Never activated in background.</div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-name">ACCESS_NETWORK_STATE</div>
+          <div class="perm-desc">Checks if you are connected to Wi-Fi before attempting to reach your PC server. Prevents wasted connection attempts over cellular.</div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-name">NEARBY_WIFI_DEVICES<br/>(Android 12+)</div>
+          <div class="perm-desc">Enables the optional LAN Auto-Discover feature, which scans your local subnet via UDP broadcast to find your PC server automatically. Manual IP entry always works without this.</div>
+        </div>
+        <div class="perm-row">
+          <div class="perm-name">VIBRATE</div>
+          <div class="perm-desc">Haptic feedback on button presses and script completion. No data collected.</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Permissions NOT Requested</h3>
+        <p style="font-family:monospace; font-size:11px; color:#336677; line-height:2;">
+          READ_CONTACTS &nbsp;·&nbsp; WRITE_CONTACTS &nbsp;·&nbsp; ACCESS_FINE_LOCATION &nbsp;·&nbsp; ACCESS_COARSE_LOCATION &nbsp;·&nbsp; RECORD_AUDIO &nbsp;·&nbsp; READ_SMS &nbsp;·&nbsp; SEND_SMS &nbsp;·&nbsp; READ_CALL_LOG &nbsp;·&nbsp; GET_ACCOUNTS &nbsp;·&nbsp; READ_PHONE_STATE &nbsp;·&nbsp; WRITE_EXTERNAL_STORAGE &nbsp;·&nbsp; READ_MEDIA_VIDEO &nbsp;·&nbsp; READ_MEDIA_AUDIO &nbsp;·&nbsp; ACCESS_BACKGROUND_LOCATION &nbsp;·&nbsp; REQUEST_INSTALL_PACKAGES &nbsp;·&nbsp; SYSTEM_ALERT_WINDOW &nbsp;·&nbsp; ACCESSIBILITY_SERVICE &nbsp;·&nbsp; MANAGE_EXTERNAL_STORAGE
+        </p>
+      </div>
+
+      <!-- ─── Your Rights ─── -->
+      <h2 class="section" style="font-size:11px; margin-top:28px;">Your Rights &amp; Data Control</h2>
+      <div class="card">
+        <ul class="check-list">
+          <li><strong>Access:</strong> All data is on your device — view it in-app at any time</li>
+          <li><strong>Delete:</strong> Settings → Personal Files &amp; Account → Delete All My Data, or uninstall the app</li>
+          <li><strong>Export:</strong> Settings → Butler AI Knowledge Base → Export Knowledge Base (JSON)</li>
+          <li><strong>Correction:</strong> Edit scripts and settings directly in the app</li>
+          <li><strong>No Account:</strong> No account exists to delete — we have no user database</li>
+          <li><strong>Portability:</strong> All data exports as standard JSON</li>
+        </ul>
+      </div>
+
+      <!-- ─── Contact ─── -->
+      <span id="contact" class="anchor-target"></span>
+      <div class="contact-box" style="margin-top:40px;">
+        <h2>Questions or Privacy Requests?</h2>
+        <a href="mailto:andrejsladkovic1992@gmail.com">andrejsladkovic1992@gmail.com</a>
+        <p>We respond within 48 hours. Butler AI is developed by Andrej Sladkovic.</p>
+        <p style="margin-top:16px; font-size:11px; color:#1a2a3a;">
+          <a href="#privacy-policy" style="color:#00ccdd; font-size:11px;">Privacy Policy</a> &nbsp;·&nbsp;
+          <a href="#terms-of-service" style="color:#ff8c00; font-size:11px;">Terms of Service</a> &nbsp;·&nbsp;
+          <a href="#data-safety" style="color:#44ff88; font-size:11px;">Data Safety</a> &nbsp;·&nbsp;
+          <a href="#data-deletion" style="color:#ff4444; font-size:11px;">Data Deletion</a>
+        </p>
+      </div>
+
+      <footer>
+        <p>Butler AI Automation &nbsp;·&nbsp; Package: com.butlerai.pc.automation &nbsp;·&nbsp; Legal Docs v2.0 &nbsp;·&nbsp; Effective May 18, 2026</p>
+        <p style="margin-top:6px;">This app is 100% self-hosted. Zero data collection. Zero cloud. Zero tracking.</p>
+        <p style="margin-top:6px; font-size:10px; color:#1a2a3a;">
+          Anchors: #privacy-policy &nbsp;·&nbsp; #terms-of-service &nbsp;·&nbsp; #data-safety &nbsp;·&nbsp; #data-deletion &nbsp;·&nbsp; #permissions &nbsp;·&nbsp; #contact
+        </p>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

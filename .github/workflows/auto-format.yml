@@ -1,0 +1,68 @@
+name: Auto-Format Code
+
+# Runs ESLint --fix on every push to main and commits any auto-fixed
+# changes back to the branch so the repo always stays clean.
+# The bot's own commit uses [skip ci] to prevent an infinite loop.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+  workflow_dispatch:
+
+concurrency:
+  group: auto-format-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    name: ESLint auto-fix & commit
+    runs-on: ubuntu-latest
+    # Skip commits made by the bot itself to prevent infinite loops
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint --fix
+        # Allow non-zero exit so the workflow continues even if unfixable
+        # errors exist; those will be caught by the lint-typecheck workflow.
+        run: npx expo lint --fix || true
+
+      - name: Commit auto-fixes (if any)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "✅ No auto-fix changes — code is already clean."
+          else
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            git commit -m "style: auto-fix lint issues — $TIMESTAMP [skip ci]"
+            git push origin HEAD
+            echo "🚀 Auto-fix changes committed and pushed."
+          fi

@@ -1,0 +1,25 @@
+# EAS Build ignore — files/folders NOT uploaded to EAS build servers
+# Reduces tarball size and prevents accidental bundling of non-app directories.
+
+# ── Leftover sub-project (old SDK 54 migration attempt) ──────────────────────
+# Permanently excluded so git restoring this folder never affects EAS builds.
+frontend/
+
+# ── Documentation & notes ─────────────────────────────────────────────────────
+*.md
+docs/
+Patches
+
+# ── Dev/test assets not needed in builds ──────────────────────────────────────
+test_reports/
+playstore_assets/
+*.bak
+*.orig
+
+# ── Git internals ─────────────────────────────────────────────────────────────
+.git/
+.github/
+
+# ── Local dev tooling ─────────────────────────────────────────────────────────
+.expo/
+node_modules/

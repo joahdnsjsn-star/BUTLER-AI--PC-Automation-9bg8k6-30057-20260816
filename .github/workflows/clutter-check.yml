@@ -1,0 +1,162 @@
+name: Clutter Check
+
+# Scans the repo for committed archives, oversized files, and redundant
+# docs then posts a full report to the GitHub Job Summary.
+# Zero credits used — runs entirely on ubuntu-latest with bash + node.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Run every Monday at 07:00 UTC so the report lands at the start of your week.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: clutter-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  clutter-check:
+    name: Repo Clutter Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run clutter analysis
+        id: clutter
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "## 🧹 Clutter Check Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_Generated: $(date -u '+%Y-%m-%d %H:%M UTC')_" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          ISSUES=0
+
+          # ── 1. Committed archive files ──────────────────────────────────────
+          echo "### 📦 Committed Archives" >> "$GITHUB_STEP_SUMMARY"
+          ARCHIVES=$(git ls-files | grep -E '\.(zip|tar|tar\.gz|tgz|tar\.bz2|rar|7z)$' || true)
+          if [ -n "$ARCHIVES" ]; then
+            echo "⚠️ **Archives should not be committed — they bloat the repo.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| File | Size |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|------|------|" >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r f; do
+              SIZE=$(du -sh "$f" 2>/dev/null | cut -f1 || echo "?")
+              echo "| \`$f\` | $SIZE |" >> "$GITHUB_STEP_SUMMARY"
+              ISSUES=$((ISSUES + 1))
+            done <<< "$ARCHIVES"
+          else
+            echo "✅ No archive files committed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # ── 2. Large files (>500 KB, excluding assets/) ─────────────────────
+          echo "### 🐘 Large Files (> 500 KB, outside assets/)" >> "$GITHUB_STEP_SUMMARY"
+          LARGE=$(git ls-files | while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            SIZE=$(stat -c%s "$f" 2>/dev/null || echo 0)
+            if [ "$SIZE" -gt 512000 ] && [[ "$f" != assets/* ]]; then
+              HR=$(numfmt --to=iec-i --suffix=B "$SIZE" 2>/dev/null || echo "${SIZE}B")
+              echo "$HR $f"
+            fi
+          done | sort -rh || true)
+          if [ -n "$LARGE" ]; then
+            echo "⚠️ **These files are unusually large for source control.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| File | Size |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|------|------|" >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r line; do
+              SZ=$(echo "$line" | awk '{print $1}')
+              FP=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
+              echo "| \`$FP\` | $SZ |" >> "$GITHUB_STEP_SUMMARY"
+              ISSUES=$((ISSUES + 1))
+            done <<< "$LARGE"
+          else
+            echo "✅ No oversized source files found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # ── 3. Root-level markdown pile-up ──────────────────────────────────
+          echo "### 📄 Root-Level Markdown Files" >> "$GITHUB_STEP_SUMMARY"
+          ROOT_MD=$(git ls-files '*.md' | grep -v '/' || true)
+          ROOT_MD_COUNT=$(echo "$ROOT_MD" | grep -c . || true)
+          THRESHOLD=10
+          if [ "$ROOT_MD_COUNT" -gt "$THRESHOLD" ]; then
+            echo "⚠️ **$ROOT_MD_COUNT markdown files in the repo root (threshold: $THRESHOLD). Consider moving them to \`docs/\`.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "<details><summary>Show all $ROOT_MD_COUNT files</summary>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "$ROOT_MD" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+            ISSUES=$((ISSUES + 1))
+          else
+            echo "✅ $ROOT_MD_COUNT markdown files in root (within threshold)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # ── 4. Duplicate file names (same name, different directories) ──────
+          echo "### 🪞 Duplicate Filenames" >> "$GITHUB_STEP_SUMMARY"
+          DUPES=$(git ls-files | xargs -I{} basename {} | sort | uniq -d || true)
+          if [ -n "$DUPES" ]; then
+            echo "⚠️ **These filenames appear in multiple directories — possible redundant copies:**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Filename | Locations |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|----------|-----------|" >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r name; do
+              LOCS=$(git ls-files | grep "/$name$\|^$name$" | tr '\n' ' ')
+              echo "| \`$name\` | $LOCS |" >> "$GITHUB_STEP_SUMMARY"
+            done <<< "$DUPES"
+            ISSUES=$((ISSUES + 1))
+          else
+            echo "✅ No duplicate filenames detected." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # ── 5. Temp / scratch files accidentally committed ───────────────────
+          echo "### 🗑️ Temp / Scratch Files" >> "$GITHUB_STEP_SUMMARY"
+          TEMP=$(git ls-files | grep -iE '\.(log|bak|swp|tmp|orig|DS_Store)$|~$' || true)
+          if [ -n "$TEMP" ]; then
+            echo "⚠️ **These look like temp/scratch files that should be gitignored:**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "$TEMP" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            ISSUES=$((ISSUES + 1))
+          else
+            echo "✅ No temp/scratch files found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # ── 6. Total tracked file count ──────────────────────────────────────
+          TOTAL=$(git ls-files | wc -l)
+          echo "### 📊 Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Total tracked files | $TOTAL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Clutter issues found | $ISSUES |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$ISSUES" -gt 0 ]; then
+            echo "⚠️ **$ISSUES clutter issue(s) need attention. See details above.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "issues=$ISSUES" >> "$GITHUB_OUTPUT"
+            # Do NOT fail the workflow — this is advisory, not blocking.
+          else
+            echo "🎉 **Repo is clean! No clutter found.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "issues=0" >> "$GITHUB_OUTPUT"
+          fi

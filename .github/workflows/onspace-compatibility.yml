@@ -1,0 +1,269 @@
+name: onspace.ai Compatibility Check
+
+# Validates app.json, eas.json, and package.json against onspace.ai
+# deployment requirements.  Zero EAS credits used — pure Node + bash.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.json'
+      - 'eas.json'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'babel.config.js'
+      - 'metro.config.js'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app.json'
+      - 'eas.json'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'babel.config.js'
+      - 'metro.config.js'
+  workflow_dispatch:
+
+concurrency:
+  group: onspace-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-check:
+    name: onspace.ai Compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run compatibility checks
+        shell: node {0}
+        run: |
+          const fs = require('fs');
+          const path = require('path');
+
+          // ── Helpers ──────────────────────────────────────────────────────────
+          const SUMMARY = process.env.GITHUB_STEP_SUMMARY;
+          const lines = [];
+          const issues = [];
+          const warnings = [];
+          const passed = [];
+
+          function out(line) { lines.push(line); }
+          function issue(msg) { issues.push(msg); out(`> ❌ **${msg}**`); out(''); }
+          function warn(msg)  { warnings.push(msg); out(`> ⚠️ ${msg}`); out(''); }
+          function pass(msg)  { passed.push(msg); out(`> ✅ ${msg}`); out(''); }
+
+          function readJSON(file) {
+            try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+            catch (e) { return null; }
+          }
+
+          function semverMajorMinor(v) {
+            const m = (v || '').replace(/[^0-9.]/g, '').match(/^(\d+)\.(\d+)/);
+            return m ? [parseInt(m[1]), parseInt(m[2])] : [0, 0];
+          }
+
+          // ── Load config files ────────────────────────────────────────────────
+          const appJson  = readJSON('app.json');
+          const easJson  = readJSON('eas.json');
+          const pkgJson  = readJSON('package.json');
+
+          out('## 🚀 onspace.ai Compatibility Report');
+          out('');
+          out(`_Generated: ${new Date().toUTCString()}_`);
+          out('');
+
+          // ════════════════════════════════════════════════════════════════════
+          // SECTION 1 — app.json
+          // ════════════════════════════════════════════════════════════════════
+          out('### 📱 app.json');
+          out('');
+
+          if (!appJson) {
+            issue('app.json is missing or invalid JSON');
+          } else {
+            const expo = appJson.expo || {};
+
+            // Required fields
+            const required = ['name', 'slug', 'version', 'owner'];
+            for (const key of required) {
+              if (expo[key]) pass(`expo.${key} = "${expo[key]}"`);
+              else issue(`expo.${key} is missing`);
+            }
+
+            // Bundle identifiers
+            const androidPkg = expo.android && expo.android.package;
+            const iosBundleId = expo.ios && expo.ios.bundleIdentifier;
+            if (androidPkg) pass(`Android package: ${androidPkg}`);
+            else warn('expo.android.package is not set — required for Play Store submission');
+            if (iosBundleId) pass(`iOS bundleIdentifier: ${iosBundleId}`);
+            else warn('expo.ios.bundleIdentifier is not set — required for App Store submission');
+
+            // newArchEnabled
+            if (expo.newArchEnabled === true)
+              pass('New Architecture is enabled (newArchEnabled: true)');
+            else
+              warn('expo.newArchEnabled is not set to true — onspace.ai recommends the New Architecture for Expo SDK 50+');
+
+            // Scheme (needed for deep-linking)
+            if (expo.scheme) pass(`Deep-link scheme: ${expo.scheme}`);
+            else warn('expo.scheme is not set — deep-linking will not work');
+
+            // Icon & splash
+            if (expo.icon) pass('App icon is configured');
+            else issue('expo.icon is missing');
+            if (expo.splash && expo.splash.image) pass('Splash screen is configured');
+            else warn('expo.splash is not configured');
+
+            // Web bundler
+            const webBundler = expo.web && expo.web.bundler;
+            if (webBundler === 'metro') pass('Web bundler: metro');
+            else warn(`expo.web.bundler is "${webBundler || 'not set'}" — onspace.ai web targets expect "metro"`);
+          }
+          out('');
+
+          // ════════════════════════════════════════════════════════════════════
+          // SECTION 2 — eas.json
+          // ════════════════════════════════════════════════════════════════════
+          out('### ⚙️ eas.json');
+          out('');
+
+          if (!easJson) {
+            warn('eas.json is missing — EAS builds and submissions will not be configured');
+          } else {
+            // CLI version
+            const cliVersion = easJson.cli && easJson.cli.version;
+            if (cliVersion) pass(`EAS CLI version constraint: ${cliVersion}`);
+            else warn('eas.cli.version is not set');
+
+            // Required build profiles
+            const requiredProfiles = ['preview', 'production'];
+            const buildProfiles = (easJson.build && Object.keys(easJson.build)) || [];
+            for (const p of requiredProfiles) {
+              if (buildProfiles.includes(p)) pass(`Build profile "${p}" exists`);
+              else issue(`Build profile "${p}" is missing — required for onspace.ai deployments`);
+            }
+
+            // Production submit config
+            const submitProd = easJson.submit && easJson.submit.production;
+            const submitAndroid = submitProd && submitProd.android;
+            const submitIos = submitProd && submitProd.ios;
+            if (submitAndroid) pass('Production Android submit config is set');
+            else warn('eas.submit.production.android is not configured');
+            if (submitIos) {
+              if (submitIos.appleId && submitIos.appleId.includes('onspace.ai'))
+                pass('iOS submit uses onspace.ai Apple ID');
+              else
+                warn(`iOS submit appleId is "${submitIos.appleId || 'not set'}" — expected an onspace.ai address`);
+            } else {
+              warn('eas.submit.production.ios is not configured');
+            }
+
+            // appVersionSource
+            if (easJson.cli && easJson.cli.appVersionSource === 'local')
+              pass('appVersionSource: local (version managed in app.json)');
+            else
+              warn('eas.cli.appVersionSource is not "local" — version bumps may behave unexpectedly');
+          }
+          out('');
+
+          // ════════════════════════════════════════════════════════════════════
+          // SECTION 3 — package.json / dependencies
+          // ════════════════════════════════════════════════════════════════════
+          out('### 📦 package.json / Dependencies');
+          out('');
+
+          if (!pkgJson) {
+            issue('package.json is missing or invalid JSON');
+          } else {
+            const deps = { ...(pkgJson.dependencies || {}), ...(pkgJson.devDependencies || {}) };
+
+            // Expo SDK version
+            const expoVersion = deps['expo'] || '';
+            const [expoMajor] = semverMajorMinor(expoVersion);
+            if (expoMajor >= 50) pass(`Expo SDK ${expoVersion} — compatible`);
+            else if (expoMajor > 0) issue(`Expo SDK ${expoVersion} is below 50 — onspace.ai requires Expo 50+`);
+            else warn('expo dependency not found in package.json');
+
+            // React Native
+            const rnVersion = deps['react-native'] || '';
+            const [rnMajor, rnMinor] = semverMajorMinor(rnVersion);
+            if (rnMajor === 0 && rnMinor >= 74) pass(`react-native ${rnVersion} — compatible`);
+            else if (rnVersion) warn(`react-native ${rnVersion} — onspace.ai recommends 0.74+`);
+            else warn('react-native not found in package.json');
+
+            // expo-router (required for file-based routing)
+            if (deps['expo-router']) pass(`expo-router ${deps['expo-router']} — file-based routing enabled`);
+            else issue('expo-router is not installed — onspace.ai requires file-based routing');
+
+            // TypeScript
+            if (deps['typescript']) pass(`TypeScript ${deps['typescript']}`);
+            else warn('TypeScript is not listed as a devDependency');
+
+            // Supabase (optional but expected for onspace.ai backend)
+            if (deps['@supabase/supabase-js']) pass(`@supabase/supabase-js ${deps['@supabase/supabase-js']}`);
+            else warn('@supabase/supabase-js not found — onspace.ai backend integration may be missing');
+
+            // Check for conflicting navigation libs
+            const navLibs = ['@react-navigation/native', 'expo-router'];
+            const presentNavLibs = navLibs.filter(l => deps[l]);
+            if (presentNavLibs.length > 1)
+              warn(`Both expo-router and @react-navigation/native are present — ensure they are not used as dual top-level navigators`);
+
+            // Duplicate/redundant deps
+            const redundant = [];
+            if (deps['react-native-elements'] && deps['react-native-paper'])
+              redundant.push('react-native-elements + react-native-paper (two UI libraries)');
+            if (deps['redux'] && deps['zustand'])
+              redundant.push('redux + zustand (two state managers)');
+            if (redundant.length) {
+              for (const r of redundant)
+                warn(`Potentially redundant dependency pair: ${r}`);
+            }
+          }
+          out('');
+
+          // ════════════════════════════════════════════════════════════════════
+          // SECTION 4 — Summary
+          // ════════════════════════════════════════════════════════════════════
+          out('### 📊 Summary');
+          out('');
+          out(`| | Count |`);
+          out(`|---|---|`);
+          out(`| ✅ Passed | ${passed.length} |`);
+          out(`| ⚠️ Warnings | ${warnings.length} |`);
+          out(`| ❌ Issues | ${issues.length} |`);
+          out('');
+
+          if (issues.length > 0) {
+            out('> ❌ **Compatibility issues found — see details above.**');
+          } else if (warnings.length > 0) {
+            out('> ⚠️ **No blocking issues, but there are warnings worth reviewing.**');
+          } else {
+            out('> 🎉 **All checks passed — fully compatible with onspace.ai!**');
+          }
+
+          // Write summary
+          fs.appendFileSync(SUMMARY, lines.join('\n') + '\n');
+
+          // Print to console as well
+          console.log(lines.join('\n'));
+
+          // Fail on blocking issues
+          if (issues.length > 0) {
+            console.error(`\n❌ ${issues.length} compatibility issue(s) found.`);
+            process.exit(1);
+          }
+          console.log(`\n✅ Compatibility check complete. ${warnings.length} warning(s).`);
